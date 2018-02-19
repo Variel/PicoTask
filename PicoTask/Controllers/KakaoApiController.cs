@@ -66,11 +66,12 @@ namespace PicoTask.Controllers
             }
             else
             {
-                var match = Regex.Match(model.content, @"^(?<title>.+)\n\[(?<id>\w{8}-\w{4}-\w{4}-\w{4}-\w{12})\]$");
+                var idPattern = @"\[(?<id>\w{8}-\w{4}-\w{4}-\w{4}-\w{12})\]";
+                var idMatch = Regex.Match(model.content, idPattern);
 
-                if (match.Success)
+                if (idMatch.Success)
                 {
-                    var id = Guid.Parse(match.Groups["id"].Value);
+                    var id = Guid.Parse(idMatch.Groups["id"].Value);
                     var task = await _taskService.GetTaskAsync(id);
 
                     return Json(new MessageResponse
