@@ -36,7 +36,7 @@ namespace PicoTask.Controllers
         }
 
         [HttpPost("message")]
-        public async Task<IActionResult> Message(ChatRequest model)
+        public async Task<IActionResult> Message([FromBody] ChatRequest model)
         {
             if (model.content == "*추가하기*")
             {
