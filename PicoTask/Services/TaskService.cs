@@ -123,13 +123,22 @@ namespace PicoTask.Services
             const string placePattern = @"@(.+)$";
 
 
+            var totalCategories = await Task.WhenAll(
+                Regex.Matches(rawTitle, categoryPattern)
+                    .Select(m => m.Groups[1].Value.Replace("_", " "))
+                    .Select(async c => new {Category = await _categoryService.FindCategoryAsync(c), Keyword = c}));
+
             categories =
-                (await Task.WhenAll(
-                    Regex.Matches(rawTitle, categoryPattern)
-                        .Select(m => m.Groups[1].Value.Replace("_", " "))
-                        .Select(async c => await _categoryService.FindCategoryAsync(c))))
-                .Where(c => c != null)
-                .ToArray();
+                totalCategories
+                    .Where(c => c.Category != null)
+                    .Select(c => c.Category)
+                    .ToArray();
+
+            var notFoundCategories =
+                totalCategories
+                    .Where(c => c.Category == null)
+                    .Select(c => c.Keyword)
+                    .ToArray();
 
             rawTitle = Regex.Replace(rawTitle, categoryPattern, "");
             var deadlineMatch = Regex.Match(rawTitle, deadlinePattern);
@@ -201,6 +210,21 @@ namespace PicoTask.Services
                 {
                     Category = category,
                     Task = task
+                });
+            }
+
+            foreach (var keyword in notFoundCategories)
+            {
+                var category = new TaskCategory
+                {
+                    FullName = keyword,
+                };
+
+                _database.Categories.Add(category);
+                task.Categories.Add(new TaskItemCategory
+                {
+                    Category = category,
+                    Task = task,
                 });
             }
         }
