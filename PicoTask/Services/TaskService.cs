@@ -42,6 +42,14 @@ namespace PicoTask.Services
             return task;
         }
 
+        public async Task<TaskItem> GetTaskAsync(Guid id)
+        {
+            return await _database.Tasks
+                .Include(t => t.Categories)
+                    .ThenInclude(j => j.Category)
+                .SingleOrDefaultAsync(t => t.Id == id);
+        }
+
         public async Task<TaskItem[]> GetTasksAsync(bool includeDone = false)
         {
             return await _database.Tasks
@@ -195,16 +203,6 @@ namespace PicoTask.Services
                     Task = task
                 });
             }
-        }
-
-        public async Task<TaskItem> FindTaskAsync(string id, string title)
-        {
-            var task = (await _database.Tasks
-                .Where(t => t.Title == title)
-                .ToArrayAsync())
-                .SingleOrDefault(t => t.Id.ToString().StartsWith(id));
-
-            return task;
         }
     }
 }

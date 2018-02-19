@@ -29,8 +29,7 @@ namespace PicoTask.Controllers
                 buttons = new []
                 {
                     "*추가하기*",
-                    "*목록보기*",
-                    "*실험\n하기*"
+                    "*목록보기*"
                 }
             });
         }
@@ -57,7 +56,7 @@ namespace PicoTask.Controllers
                     keyboard = new Keyboard
                     {
                         type = KeyboardType.Buttons,
-                        buttons = tasks.Select(t => "[" + t.Id.ToString().Substring(0, 7).ToLower() + "] " + t.Title).ToArray()
+                        buttons = tasks.Select(t => t.Title + "\n" + "[" + t.Id.ToString().Substring(0, 7).ToLower() + "] ").ToArray()
                     },
                     message = new Message
                     {
@@ -67,11 +66,12 @@ namespace PicoTask.Controllers
             }
             else
             {
-                var match = Regex.Match(model.content, @"^\[(?<id>\w{7})\] (?<title>.+)$");
+                var match = Regex.Match(model.content, @"^(?<title>.+)\n\[(?<id>\w{7})\]$");
 
                 if (match.Success)
                 {
-                    var task = await _taskService.FindTaskAsync(match.Groups["id"].Value, match.Groups["title"].Value);
+                    var id = Guid.Parse(match.Groups["id"].Value);
+                    var task = await _taskService.GetTaskAsync(id);
 
                     return Json(new MessageResponse
                     {
@@ -94,22 +94,24 @@ namespace PicoTask.Controllers
                     });
                 }
 
-                await _taskService.CreateTaskAsync(model.content, null);
-
-                return Json(new MessageResponse
+                if (!model.content.StartsWith("*"))
                 {
-                    keyboard = new Keyboard
+                    await _taskService.CreateTaskAsync(model.content, null);
+
+                    return Json(new MessageResponse
                     {
-                        type = KeyboardType.Buttons,
-                        buttons = new[]
+                        keyboard = new Keyboard
                         {
+                            type = KeyboardType.Buttons,
+                            buttons = new[]
+                            {
                             "*추가하기*",
-                            "*목록보기*",
-                            "*실험\n하기*"
+                            "*목록보기*"
                         }
-                    },
-                    message = new Message { text = "추가되었습니다" }
-                });
+                        },
+                        message = new Message { text = "추가되었습니다" }
+                    });
+                }
             }
 
             return Json(new MessageResponse
