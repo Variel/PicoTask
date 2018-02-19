@@ -56,7 +56,7 @@ namespace PicoTask.Controllers
                     keyboard = new Keyboard
                     {
                         type = KeyboardType.Buttons,
-                        buttons = tasks.Select(t => t.Title + "\n" + "[" + t.Id.ToString().Substring(0, 7).ToLower() + "] ").ToArray()
+                        buttons = tasks.Select(t => t.Title + "\n" + "[" + t.Id.ToString().ToLower() + "] ").ToArray()
                     },
                     message = new Message
                     {
@@ -66,7 +66,7 @@ namespace PicoTask.Controllers
             }
             else
             {
-                var match = Regex.Match(model.content, @"^(?<title>.+)\n\[(?<id>\w{7})\]$");
+                var match = Regex.Match(model.content, @"^(?<title>.+)\n\[(?<id>\w{8}-\w{4}-\w{4}-\w{4}-\w{12})\]$");
 
                 if (match.Success)
                 {
