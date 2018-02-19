@@ -119,7 +119,7 @@ namespace PicoTask.Services
 
             const string categoryPattern = @"#(\w+)";
             const string deadlinePattern =
-                @"\+\s?(?<year>\d\d)?\.?(?<month>\d\d?)\.(?<day>\d\d?)-?(?<hour>\d\d?)?:?(?<minute>\d\d)?(?<ampm>[PA]M)?";
+                @"\+\s?(?<year>\d\d(\d\d)?)?\.?(?<month>\d\d?)\.(?<day>\d\d?)-?(?<hour>\d\d?)?:?(?<minute>\d\d)?(?<ampm>[PA]M)?";
             const string placePattern = @"@(.+)$";
 
 
