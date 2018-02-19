@@ -47,7 +47,7 @@ namespace PicoTask.Controllers
                         text = "내용을 적어주세요"
                     }
                 });
-            } 
+            }
             else if (model.content == "*목록보기*")
             {
                 var tasks = (await _taskService.GetTasksAsync()).ToArray();
@@ -56,13 +56,90 @@ namespace PicoTask.Controllers
                     keyboard = new Keyboard
                     {
                         type = KeyboardType.Buttons,
-                        buttons = tasks.Select(t => t.Title + "\n" + "[" + t.Id.ToString().ToLower() + "] ").ToArray()
+                        buttons = tasks.Select(t => t.Title + "\n" + "[" + t.Id.ToString().ToLower() + "]").Concat(new [] {"*처음으로*"}).ToArray()
                     },
                     message = new Message
                     {
                         text = String.Join("\n", tasks.Select(t => String.Join("", t.Categories.Select(c => "[" + c.Category.FullName + "]")) + " " + t.Title).ToArray())
                     }
                 });
+            }
+            else if (model.content == "*처음으로*")
+            {
+                return Json(new MessageResponse
+                {
+                    keyboard = new Keyboard
+                    {
+                        type = KeyboardType.Buttons,
+                        buttons = new[]
+                        {
+                            "*추가하기*",
+                            "*목록보기*"
+                        }
+                    },
+                    message = new Message
+                    {
+                        text = "명령을 눌러주세요"
+                    }
+                });
+            }
+            else if (model.content.StartsWith("*완료처리*"))
+            {
+                var idPattern = @"\[(?<id>\w{8}-\w{4}-\w{4}-\w{4}-\w{12})\]";
+                var idMatch = Regex.Match(model.content, idPattern);
+
+                if (idMatch.Success)
+                {
+                    var id = Guid.Parse(idMatch.Groups["id"].Value);
+
+                    await _taskService.ToggleDoneAsync(id);
+
+                    return Json(new MessageResponse
+                    {
+                        keyboard = new Keyboard
+                        {
+                            type = KeyboardType.Buttons,
+                            buttons = new[]
+                            {
+                                "*추가하기*",
+                                "*목록보기*"
+                            }
+                        },
+                        message = new Message
+                        {
+                            text = "명령을 눌러주세요"
+                        }
+                    });
+                }
+            }
+            else if (model.content.StartsWith("*삭제하기*"))
+            {
+                var idPattern = @"\[(?<id>\w{8}-\w{4}-\w{4}-\w{4}-\w{12})\]";
+                var idMatch = Regex.Match(model.content, idPattern);
+
+                if (idMatch.Success)
+                {
+                    var id = Guid.Parse(idMatch.Groups["id"].Value);
+
+                    await _taskService.ArchiveAsync(id);
+
+                    return Json(new MessageResponse
+                    {
+                        keyboard = new Keyboard
+                        {
+                            type = KeyboardType.Buttons,
+                            buttons = new[]
+                            {
+                                "*추가하기*",
+                                "*목록보기*"
+                            }
+                        },
+                        message = new Message
+                        {
+                            text = "명령을 눌러주세요"
+                        }
+                    });
+                }
             }
             else
             {
@@ -81,9 +158,10 @@ namespace PicoTask.Controllers
                             type = KeyboardType.Buttons,
                             buttons = new[]
                             {
-                                "*수정하기*",
-                                "*완료처리*",
-                                "*삭제하기*"
+                                $"*완료처리*\n[{id}]",
+                                $"*삭제하기*\n[{id}]",
+                                "*목록보기*",
+                                "*처음으로*"
                             }
                         },
                         message = new Message
@@ -106,9 +184,9 @@ namespace PicoTask.Controllers
                             type = KeyboardType.Buttons,
                             buttons = new[]
                             {
-                            "*추가하기*",
-                            "*목록보기*"
-                        }
+                                "*추가하기*",
+                                "*목록보기*"
+                            }
                         },
                         message = new Message { text = "추가되었습니다" }
                     });
@@ -117,10 +195,18 @@ namespace PicoTask.Controllers
 
             return Json(new MessageResponse
             {
-                keyboard = Models.Response.Keyboard.TextKeyboard,
+                keyboard = new Keyboard
+                {
+                    type = KeyboardType.Buttons,
+                    buttons = new[]
+                    {
+                        "*추가하기*",
+                        "*목록보기*"
+                    }
+                },
                 message = new Message
                 {
-                    text = "확인"
+                    text = "명령을 눌러주세요"
                 }
             });
         }
