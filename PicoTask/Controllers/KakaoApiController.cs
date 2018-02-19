@@ -60,7 +60,7 @@ namespace PicoTask.Controllers
                     },
                     message = new Message
                     {
-                        text = String.Join("\n", tasks.Select(t => String.Join(" ", t.Categories.Select(c => "[" + c.Category.FullName + "]")) + t.Title).ToArray())
+                        text = String.Join("\n", tasks.Select(t => String.Join("", t.Categories.Select(c => "[" + c.Category.FullName + "]")) + " " + t.Title).ToArray())
                     }
                 });
             }
