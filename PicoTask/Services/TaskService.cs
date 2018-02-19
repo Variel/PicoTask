@@ -42,7 +42,7 @@ namespace PicoTask.Services
             return task;
         }
 
-        public async Task<TaskItem> GetTaskAsync(Guid id)
+        public async Task<TaskItem> FindTaskAsync(Guid id)
         {
             return await _database.Tasks
                 .Include(t => t.Categories)

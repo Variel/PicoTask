@@ -14,24 +14,28 @@ namespace PicoTask.Controllers
     public class KakaoApiController : Controller
     {
         private readonly TaskService _taskService;
+        private readonly CategoryService _categoryService;
+        private static readonly Keyboard DefaultKeyboard = new Keyboard
+        {
+            type = KeyboardType.Buttons,
+            buttons = new[]
+            {
+                "*추가하기*",
+                "*목록 보기*",
+                "*카테고리 보기*"
+            }
+        };
 
-        public KakaoApiController(TaskService taskService)
+        public KakaoApiController(TaskService taskService, CategoryService categoryService)
         {
             _taskService = taskService;
+            _categoryService = categoryService;
         }
         
         [HttpGet("keyboard")]
         public async Task<IActionResult> Keyboard()
         {
-            return Json(new Keyboard
-            {
-                type = KeyboardType.Buttons,
-                buttons = new []
-                {
-                    "*추가하기*",
-                    "*목록보기*"
-                }
-            });
+            return Json(DefaultKeyboard);
         }
 
         [HttpPost("message")]
@@ -48,7 +52,7 @@ namespace PicoTask.Controllers
                     }
                 });
             }
-            else if (model.content == "*목록보기*")
+            else if (model.content == "*목록 보기*")
             {
                 var tasks = (await _taskService.GetTasksAsync()).ToArray();
                 return Json(new MessageResponse
@@ -68,18 +72,27 @@ namespace PicoTask.Controllers
             {
                 return Json(new MessageResponse
                 {
-                    keyboard = new Keyboard
-                    {
-                        type = KeyboardType.Buttons,
-                        buttons = new[]
-                        {
-                            "*추가하기*",
-                            "*목록보기*"
-                        }
-                    },
+                    keyboard = DefaultKeyboard,
                     message = new Message
                     {
                         text = "명령을 눌러주세요"
+                    }
+                });
+            }
+            else if (model.content == "*카테고리 보기*")
+            {
+                var categories = await _categoryService.GetCategoriesAsync();
+                
+                return Json(new MessageResponse
+                {
+                    keyboard = new Keyboard
+                    {
+                        type = KeyboardType.Buttons,
+                        buttons = categories.Select(c => $"{c.FullName}\n[c-{c.Id}]").Concat(new [] { "*처음으로*" }).ToArray()
+                    },
+                    message = new Message
+                    {
+                        text = String.Join("\n", categories.Select(c => $"[{c.FullName}] {c.Tasks.Count}개"))
                     }
                 });
             }
@@ -96,15 +109,7 @@ namespace PicoTask.Controllers
 
                     return Json(new MessageResponse
                     {
-                        keyboard = new Keyboard
-                        {
-                            type = KeyboardType.Buttons,
-                            buttons = new[]
-                            {
-                                "*추가하기*",
-                                "*목록보기*"
-                            }
-                        },
+                        keyboard = DefaultKeyboard,
                         message = new Message
                         {
                             text = "명령을 눌러주세요"
@@ -125,15 +130,7 @@ namespace PicoTask.Controllers
 
                     return Json(new MessageResponse
                     {
-                        keyboard = new Keyboard
-                        {
-                            type = KeyboardType.Buttons,
-                            buttons = new[]
-                            {
-                                "*추가하기*",
-                                "*목록보기*"
-                            }
-                        },
+                        keyboard = DefaultKeyboard,
                         message = new Message
                         {
                             text = "명령을 눌러주세요"
@@ -144,12 +141,15 @@ namespace PicoTask.Controllers
             else
             {
                 var idPattern = @"\[(?<id>\w{8}-\w{4}-\w{4}-\w{4}-\w{12})\]";
+                var catIdPattern = @"\[c-(?<id>\w{8}-\w{4}-\w{4}-\w{4}-\w{12})\]";
+
                 var idMatch = Regex.Match(model.content, idPattern);
+                var catIdMatch = Regex.Match(model.content, catIdPattern);
 
                 if (idMatch.Success)
                 {
                     var id = Guid.Parse(idMatch.Groups["id"].Value);
-                    var task = await _taskService.GetTaskAsync(id);
+                    var task = await _taskService.FindTaskAsync(id);
 
                     return Json(new MessageResponse
                     {
@@ -160,7 +160,7 @@ namespace PicoTask.Controllers
                             {
                                 $"*완료처리*\n[{id}]",
                                 $"*삭제하기*\n[{id}]",
-                                "*목록보기*",
+                                "*목록 보기*",
                                 "*처음으로*"
                             }
                         },
@@ -172,6 +172,25 @@ namespace PicoTask.Controllers
                         }
                     });
                 }
+                else if (catIdMatch.Success)
+                {
+                    var id = Guid.Parse(catIdMatch.Groups["id"].Value);
+                    var category = await _categoryService.FindCategoryAsync(id);
+                    var tasks = category.Tasks.Select(t => t.Task);
+
+                    return Json(new MessageResponse
+                    {
+                        keyboard = new Keyboard
+                        {
+                            type = KeyboardType.Buttons,
+                            buttons = tasks.Select(t => t.Title + "\n" + "[" + t.Id.ToString().ToLower() + "]").Concat(new[] { "*처음으로*" }).ToArray()
+                        },
+                        message = new Message
+                        {
+                            text = String.Join("\n", tasks.Select(t => String.Join("", t.Categories.Select(c => "[" + c.Category.FullName + "]")) + " " + t.Title).ToArray())
+                        }
+                    });
+                }
 
                 if (!model.content.StartsWith("*"))
                 {
@@ -179,15 +198,7 @@ namespace PicoTask.Controllers
 
                     return Json(new MessageResponse
                     {
-                        keyboard = new Keyboard
-                        {
-                            type = KeyboardType.Buttons,
-                            buttons = new[]
-                            {
-                                "*추가하기*",
-                                "*목록보기*"
-                            }
-                        },
+                        keyboard = DefaultKeyboard,
                         message = new Message { text = "추가되었습니다" }
                     });
                 }
@@ -195,15 +206,7 @@ namespace PicoTask.Controllers
 
             return Json(new MessageResponse
             {
-                keyboard = new Keyboard
-                {
-                    type = KeyboardType.Buttons,
-                    buttons = new[]
-                    {
-                        "*추가하기*",
-                        "*목록보기*"
-                    }
-                },
+                keyboard = DefaultKeyboard,
                 message = new Message
                 {
                     text = "명령을 눌러주세요"

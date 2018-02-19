@@ -16,6 +16,13 @@ namespace PicoTask.Services
             _database = database;
         }
 
+        public async Task<TaskCategory[]> GetCategoriesAsync()
+        {
+            return await _database.Categories
+                .Include(c => c.Tasks)
+                .ToArrayAsync();
+        }
+
         public async Task<TaskCategory> FindCategoryAsync(string query)
         {
             query = query.ToLower();
@@ -23,6 +30,13 @@ namespace PicoTask.Services
             return await _database.Categories
                 .Where(c => c.FullName == query || c.RawAliases.Contains("|" + query + "|"))
                 .FirstOrDefaultAsync();
+        }
+        public async Task<TaskCategory> FindCategoryAsync(Guid id)
+        {
+            return await _database.Categories
+                .Include(c => c.Tasks)
+                    .ThenInclude(t => t.Task)
+                .SingleOrDefaultAsync(c => c.Id == id);
         }
 
         public async Task<TaskCategory> CreateCategoryAsync(string fullName)
