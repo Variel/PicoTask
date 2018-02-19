@@ -116,11 +116,12 @@ namespace PicoTask.Services
 
 
             categories =
-                await Task.WhenAll(
+                (await Task.WhenAll(
                     Regex.Matches(rawTitle, categoryPattern)
                         .Select(m => m.Groups[1].Value.Replace("_", " "))
-                        .Select(c => _categoryService.FindCategoryAsync(c))
-                        .ToArray());
+                        .Select(async c => await _categoryService.FindCategoryAsync(c))))
+                .Where(c => c != null)
+                .ToArray();
 
             rawTitle = Regex.Replace(rawTitle, categoryPattern, "");
             var deadlineMatch = Regex.Match(rawTitle, deadlinePattern);
