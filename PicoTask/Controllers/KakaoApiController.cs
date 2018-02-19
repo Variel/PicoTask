@@ -93,9 +93,7 @@ namespace PicoTask.Controllers
                         }
                     });
                 }
-            }
-            else
-            {
+
                 await _taskService.CreateTaskAsync(model.content, null);
 
                 return Json(new MessageResponse
