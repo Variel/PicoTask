@@ -36,7 +36,14 @@ namespace PicoTask.Controllers
         [HttpPost("message")]
         public async Task<IActionResult> Message(ChatRequest model)
         {
-            
+            return Json(new MessageResponse
+            {
+                keyboard = Models.Response.Keyboard.TextKeyboard,
+                message = new Message
+                {
+                    text = "확인"
+                }
+            });
         }
     }
 }
